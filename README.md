@@ -15,6 +15,31 @@ A entrega final deve contemplar:
 - Vídeo de até 5 minutos em linguagem executiva;
 - Recomendações baseadas nos dados analisados.
 
+
+## Metodologia
+
+A análise será conduzida em etapas:
+
+1. Definição do problema de negócio;
+2. Inventário e entendimento dos dados;
+3. Tratamento de dados ausentes, duplicados e inconsistentes;
+4. Criação da base analítica;
+5. Definição das métricas;
+6. Análise exploratória e estatística;
+7. Construção de visualizações;
+8. Geração de recomendações executivas;
+9. Preparação do relatório, apresentação e vídeo final.
+
+
+## Entregáveis
+
+- Relatório executivo;
+- Apresentação com storytelling;
+- Código documentado no GitHub;
+- Vídeo de até 5 minutos;
+- Recomendações de negócio baseadas nos dados.
+
+
 ## Base de Dados
 
 O projeto utiliza os nove arquivos públicos do dataset Olist:
@@ -50,27 +75,4 @@ Analise_Olist/
 └── requirements.txt
 ```
 
-
-## Metodologia
-
-A análise será conduzida em etapas:
-
-1. Definição do problema de negócio;
-2. Inventário e entendimento dos dados;
-3. Tratamento de dados ausentes, duplicados e inconsistentes;
-4. Criação da base analítica;
-5. Definição das métricas;
-6. Análise exploratória e estatística;
-7. Construção de visualizações;
-8. Geração de recomendações executivas;
-9. Preparação do relatório, apresentação e vídeo final.
-
-
-## Entregáveis
-
-- Relatório executivo;
-- Apresentação com storytelling;
-- Código documentado no GitHub;
-- Vídeo de até 5 minutos;
-- Recomendações de negócio baseadas nos dados.
 
