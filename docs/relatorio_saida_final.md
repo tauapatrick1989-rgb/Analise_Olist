@@ -143,12 +143,16 @@ basta; a distribuicao ajuda a interpretar o comportamento real dos pedidos.
 
 ## 10. Proximos Passos Para a Entrega
 
-1. Usar os graficos gerados para montar a apresentacao executiva.
-2. Transformar os resultados em narrativa: problema, evidencia, conclusao e
-   recomendacao.
-3. Preparar roteiro de video de ate cinco minutos.
-4. Revisar se os termos usados no relatorio nao prometem mais do que os dados
-   permitem concluir.
+O [relatório executivo](relatorio_executivo.md) reúne os achados e a decisão
+proposta para a gestão. A [apresentação editável](../presentations/olist_storytelling_executivo.pptx)
+e o [roteiro do vídeo](../presentations/roteiro_video_5min.md) estão prontos.
+O vídeo precisa ser gravado e seu link inserido no README após publicação.
+
+O aprofundamento usa comparações entre janeiro e julho de cada ano, valores
+por vendedor e a associação entre prazo de entrega e avaliação. A validação
+inclui cobertura dos pedidos elegíveis da fonte e interrompe o pipeline se
+algum controle falhar. Os quatro testes automatizados cobrem centavos,
+granularidade, comparação de períodos e múltiplas avaliações.
 
 Recomendacao de linguagem: falar em **valor dos itens vendidos**, e nao em lucro
 ou receita liquida. O dataset nao traz custos, taxas e margens para sustentar

@@ -14,12 +14,16 @@ from olist.config import DATA_ANALYTICS, DATA_CLEAN, REPORTS_FIGURES, REPORTS_QU
 from olist.metrics import (
     category_metrics,
     executive_summary,
+    comparable_periods,
+    delivery_review_metrics,
     monthly_metrics,
     order_value_distribution,
     state_metrics,
+    seller_metrics,
 )
 from olist.model import build_fato_itens, build_fato_pedidos, validate_analytics_bases
 from olist.visualizations import save_figures
+from olist.io import read_raw
 
 
 def save_tables(tables: dict[str, object], output_dir: Path) -> None:
@@ -45,7 +49,10 @@ def main() -> None:
         products=clean["products"],
     )
     fato_pedidos = build_fato_pedidos(fato_itens)
-    validation = validate_analytics_bases(fato_itens, fato_pedidos)
+    validation = validate_analytics_bases(fato_itens, fato_pedidos, clean["orders"])
+    validation.to_csv(REPORTS_QUALITY / "validacao_bases_analiticas.csv", index=False)
+    if not validation["status"].eq("ok").all():
+        raise ValueError("Validacao das bases analiticas falhou")
 
     save_tables(
         {
@@ -54,13 +61,15 @@ def main() -> None:
         },
         DATA_ANALYTICS,
     )
-    validation.to_csv(REPORTS_QUALITY / "validacao_bases_analiticas.csv", index=False)
 
     monthly = monthly_metrics(fato_pedidos)
     categories = category_metrics(fato_itens)
     states = state_metrics(fato_pedidos)
     summary = executive_summary(fato_pedidos, fato_itens)
     distribution = order_value_distribution(fato_pedidos)
+    comparison = comparable_periods(fato_pedidos)
+    sellers = seller_metrics(fato_itens)
+    delivery_reviews = delivery_review_metrics(fato_pedidos, read_raw("reviews"))
 
     save_tables(
         {
@@ -69,6 +78,9 @@ def main() -> None:
             "metricas_categorias_top15": categories,
             "metricas_ufs": states,
             "distribuicao_valor_pedido": distribution,
+            "comparativo_jan_jul": comparison,
+            "metricas_vendedores_top15": sellers,
+            "entrega_e_avaliacao": delivery_reviews,
         },
         REPORTS_TABLES,
     )

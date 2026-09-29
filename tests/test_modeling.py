@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from olist.clean import money_to_cents
 from olist.model import build_fato_itens, build_fato_pedidos, validate_analytics_bases
+from olist.metrics import comparable_periods, delivery_review_metrics
 
 
 class ModelingTests(unittest.TestCase):
@@ -26,6 +27,8 @@ class ModelingTests(unittest.TestCase):
                 "customer_id": ["customer_1"],
                 "order_status": ["delivered"],
                 "order_purchase_timestamp": [pd.Timestamp("2017-01-10")],
+                "order_delivered_customer_date": [pd.Timestamp("2017-01-15")],
+                "order_estimated_delivery_date": [pd.Timestamp("2017-01-15")],
             }
         )
         customers = pd.DataFrame(
@@ -68,6 +71,46 @@ class ModelingTests(unittest.TestCase):
         self.assertEqual(float(fato_pedidos.loc[0, "order_price"]), 30.0)
         self.assertEqual(float(fato_pedidos.loc[0, "order_freight"]), 5.0)
         self.assertTrue(validation["status"].eq("ok").all())
+
+        altered = fato_pedidos.copy()
+        altered.loc[0, "order_price_cents"] += 1
+        failed = validate_analytics_bases(fato_itens, altered)
+        self.assertEqual(
+            failed.set_index("check").loc["eligible_price_cents_reconciliation", "status"],
+            "review",
+        )
+        missing_source_order = pd.concat([orders, orders.assign(order_id="order_2")], ignore_index=True)
+        coverage = validate_analytics_bases(fato_itens, fato_pedidos, missing_source_order)
+        self.assertEqual(
+            coverage.set_index("check").loc["eligible_orders_source_coverage", "status"],
+            "review",
+        )
+
+    def test_comparison_uses_same_months_and_order_grain(self):
+        orders = pd.DataFrame({
+            "order_id": ["a", "b", "c"],
+            "is_eligible_analysis": [True, True, True],
+            "order_purchase_timestamp": pd.to_datetime(["2017-02-01", "2018-02-01", "2017-11-01"]),
+            "order_year": [2017, 2018, 2017],
+            "order_price_cents": [10000, 20000, 100000],
+        })
+        result = comparable_periods(orders)
+        self.assertEqual(result["pedidos"].tolist(), [1, 1])
+        self.assertEqual(result["valor_itens"].tolist(), [100.0, 200.0])
+        self.assertEqual(result["variacao_valor_itens"].iloc[-1], 1.0)
+
+    def test_repeated_reviews_and_same_day_delivery(self):
+        orders = pd.DataFrame({
+            "order_id": ["a", "b"],
+            "is_eligible_analysis": [True, True],
+            "order_delivered_customer_date": pd.to_datetime(["2018-01-10 18:00", "2018-01-12 12:00"]),
+            "order_estimated_delivery_date": pd.to_datetime(["2018-01-10", "2018-01-10"]),
+        })
+        reviews = pd.DataFrame({"order_id": ["a", "a", "b"], "review_score": [5, 4, 1]})
+        result = delivery_review_metrics(orders, reviews).set_index("situacao")
+        self.assertEqual(result["pedidos_com_prazo_observavel"].sum(), 2)
+        self.assertEqual(result.loc["No prazo", "pedidos_com_avaliacao"], 1)
+        self.assertEqual(result.loc["Atrasou", "percentual_notas_1_ou_2"], 1.0)
 
 
 if __name__ == "__main__":

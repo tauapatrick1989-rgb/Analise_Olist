@@ -97,3 +97,63 @@ def order_value_distribution(fato_pedidos: pd.DataFrame) -> pd.DataFrame:
     }
     return pd.DataFrame([stats])
 
+
+def comparable_periods(fato_pedidos: pd.DataFrame) -> pd.DataFrame:
+    """Compare Jan-Jul in both years on the same delivered-order definition."""
+    orders = _eligible_orders(fato_pedidos)
+    orders = orders[orders["order_purchase_timestamp"].dt.month.between(1, 7)]
+    result = (
+        orders.groupby("order_year")
+        .agg(pedidos=("order_id", "nunique"), valor_itens=("order_price_cents", "sum"))
+        .reset_index()
+        .sort_values("order_year")
+    )
+    result["valor_itens"] = result["valor_itens"] / 100
+    result["ticket_medio_sem_frete"] = result["valor_itens"] / result["pedidos"]
+    for name in ("pedidos", "valor_itens", "ticket_medio_sem_frete"):
+        result[f"variacao_{name}"] = result[name].pct_change(fill_method=None)
+    result.insert(1, "periodo", "jan-jul")
+    return result
+
+
+def seller_metrics(fato_itens: pd.DataFrame) -> pd.DataFrame:
+    items = _eligible_items(fato_itens)
+    result = (
+        items.groupby("seller_id")
+        .agg(pedidos=("order_id", "nunique"), itens=("order_item_id", "count"),
+             valor_itens_centavos=("price_cents", "sum"))
+        .reset_index()
+        .sort_values("valor_itens_centavos", ascending=False)
+    )
+    result["participacao_valor"] = result["valor_itens_centavos"] / result["valor_itens_centavos"].sum()
+    result["valor_itens"] = result.pop("valor_itens_centavos") / 100
+    return result.head(15)
+
+
+def delivery_review_metrics(fato_pedidos: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataFrame:
+    """One observation per order; repeated reviews cannot duplicate item value."""
+    orders = _eligible_orders(fato_pedidos).copy()
+    scores = reviews[["order_id", "review_score"]].copy()
+    scores["review_score"] = pd.to_numeric(scores["review_score"], errors="coerce")
+    review_by_order = scores.groupby("order_id").agg(
+        review_score_mean=("review_score", "mean"),
+        low_review=("review_score", lambda s: bool(s.le(2).any())),
+    ).reset_index()
+    orders = orders.merge(review_by_order, on="order_id", how="left", validate="one_to_one")
+    actual = pd.to_datetime(orders["order_delivered_customer_date"], errors="coerce")
+    estimated = pd.to_datetime(orders["order_estimated_delivery_date"], errors="coerce")
+    orders = orders[actual.notna() & estimated.notna()].copy()
+    orders["atrasou"] = actual.loc[orders.index].dt.normalize().gt(
+        estimated.loc[orders.index].dt.normalize()
+    )
+    rows = []
+    for atrasou, group in orders.groupby("atrasou"):
+        reviewed = group[group["review_score_mean"].notna()]
+        rows.append({
+            "situacao": "Atrasou" if atrasou else "No prazo",
+            "pedidos_com_prazo_observavel": len(group),
+            "pedidos_com_avaliacao": len(reviewed),
+            "percentual_notas_1_ou_2": float(reviewed["low_review"].mean()) if len(reviewed) else float("nan"),
+            "nota_media": float(reviewed["review_score_mean"].mean()) if len(reviewed) else float("nan"),
+        })
+    return pd.DataFrame(rows)

@@ -99,9 +99,19 @@ de compra entre **2017-01-01** e **2018-07-31**.
 
 ## Documentacao da Entrega
 
+- [Relatório executivo para gestão e investidores](docs/relatorio_executivo.md)
+- [Apresentação executiva editável](presentations/olist_storytelling_executivo.pptx)
+- [Roteiro do vídeo de até 5 minutos](presentations/roteiro_video_5min.md)
 - [Regras de tratamento](docs/regras_tratamento.md)
 - [Roteiro da entrega da Fase 1](docs/roteiro_entrega_fase1.md)
 - [Relatorio final explicativo](docs/relatorio_saida_final.md)
+
+O comparativo anual usa janeiro a julho de cada ano. A análise de entrega usa
+as datas efetiva e estimada e agrega avaliações por pedido. Os arquivos
+`comparativo_jan_jul.csv`, `entrega_e_avaliacao.csv` e
+`metricas_vendedores_top15.csv` são gerados em `reports/tabelas/`.
+
+O workflow do GitHub executa testes e pipeline em cada pull request.
 
 ## Entregáveis
 
@@ -146,4 +156,3 @@ Analise_Olist/
 ├── README.md
 └── requirements.txt
 ```
-
