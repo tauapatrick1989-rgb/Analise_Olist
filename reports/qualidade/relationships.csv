@@ -1,0 +1,9 @@
+relationship,checked_rows,missing_reference_rows,status
+items.order_id -> orders.order_id,112650,0,ok
+payments.order_id -> orders.order_id,103886,0,ok
+reviews.order_id -> orders.order_id,99224,0,ok
+orders.customer_id -> customers.customer_id,99441,0,ok
+items.product_id -> products.product_id,112650,0,ok
+items rows per order,98666,9803,behavior_possible
+payments rows per order,99440,2961,behavior_possible
+reviews rows per order,98673,547,behavior_possible

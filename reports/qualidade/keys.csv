@@ -1,0 +1,5 @@
+table,key,rows,unique_keys,duplicated_keys,status
+orders,order_id,99441,99441,0,ok
+customers,customer_id,99441,99441,0,ok
+products,product_id,32951,32951,0,ok
+sellers,seller_id,3095,3095,0,ok
