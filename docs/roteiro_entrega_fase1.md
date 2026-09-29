@@ -32,15 +32,9 @@ categorias e UFs concentram a contribuicao para esse desempenho?
 11. Preparar apresentacao e roteiro do video.
 12. Revisar reprodutibilidade da entrega.
 
-## Estrutura de Apresentacao
+## Materiais Finais
 
-| Slide | Conteudo |
-|---|---|
-| 1 | Pergunta de negocio e objetivo |
-| 2 | Base, recorte e limitacoes |
-| 3 | Evolucao mensal de pedidos e valor dos itens |
-| 4 | Categorias que mais contribuem para o valor |
-| 5 | Distribuicao por UF do cliente |
-| 6 | Conclusoes e recomendacoes |
-| 7 | Proximos passos |
-
+- [Relatório executivo](relatorio_executivo.md), com sumário, contexto, análise, recomendações e limites.
+- [Apresentação editável](../presentations/olist_storytelling_executivo.pptx), com seis slides e gráficos nativos.
+- [Roteiro de fala](../presentations/roteiro_video_5min.md) para o vídeo de até cinco minutos.
+- O vídeo gravado e seu link público ainda dependem de ao menos um integrante do grupo.

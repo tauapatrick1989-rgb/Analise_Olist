@@ -1,84 +1,14 @@
-# Roteiro de Apresentacao | Tech Challenge Olist
+# Apresentação executiva Olist
 
-## Slide 1 - Pergunta de Negocio
+Arquivo final editável: [olist_storytelling_executivo.pptx](olist_storytelling_executivo.pptx). A fonte dos números e a interpretação completa estão no [relatório executivo](../docs/relatorio_executivo.md). O [roteiro do vídeo](roteiro_video_5min.md) acompanha os seis slides.
 
-**Mensagem principal:** queremos entender o desempenho comercial da Olist no
-recorte analisado.
+| Slide | Mensagem | Evidência | Decisão ou cuidado |
+|---|---|---|---|
+| 1 | Crescimento e qualidade da entrega | Recorte histórico de pedidos entregues | Atualizar os indicadores antes de investir. |
+| 2 | O crescimento acompanhou o volume | Jan–jul 2018 versus jan–jul 2017: +160,8% pedidos; +161,6% valor; +0,3% ticket | Comparar períodos equivalentes. |
+| 3 | SP, RJ e MG somam 63% do valor | UF do cliente; quatro categorias somam 33% | Definir prioridades para investigação, sem inferir margem ou mercado potencial. |
+| 4 | Nota baixa é mais frequente em atrasos | 63,7% entre avaliados atrasados versus 9,4% no prazo | Tratar como associação, sem atribuir causalidade. |
+| 5 | Atualizar, investigar e testar | Plano de diagnóstico e piloto | Definir indicadores e custos antes do teste. |
+| 6 | Solicitação à gestão | Dados históricos e limites financeiros | Autorizar diagnóstico com dados atuais. |
 
-Fala sugerida:
-
-> O objetivo foi analisar a evolucao dos pedidos entregues e do valor dos itens
-> vendidos, identificando quais categorias e UFs mais contribuem para o
-> desempenho comercial.
-
-## Slide 2 - Base e Recorte
-
-**Mensagem principal:** a analise usa os dados publicos da Olist e um recorte
-conservador.
-
-Pontos:
-
-- nove arquivos CSV auditados;
-- recorte: pedidos entregues entre 2017-01-01 e 2018-07-31;
-- data de referencia: data de compra;
-- valor analisado: valor dos itens, separado do frete.
-
-## Slide 3 - Evolucao Mensal
-
-**Mensagem principal:** pedidos e valor dos itens mostram o comportamento do
-desempenho ao longo do tempo.
-
-Usar graficos:
-
-- `reports/figuras/evolucao_pedidos.png`;
-- `reports/figuras/evolucao_valor_itens.png`.
-
-## Slide 4 - Categorias
-
-**Mensagem principal:** parte relevante do valor esta concentrada em algumas
-categorias.
-
-Usar grafico:
-
-- `reports/figuras/top_categorias_valor.png`.
-
-Fala sugerida:
-
-> A concentracao por categoria ajuda a priorizar investigacoes comerciais, mas
-> nao deve ser lida como margem ou lucro, pois o dataset nao traz custos.
-
-## Slide 5 - UFs dos Clientes
-
-**Mensagem principal:** a distribuicao regional mostra onde esta a maior
-concentracao de valor dos itens vendidos.
-
-Usar grafico:
-
-- `reports/figuras/top_ufs_valor.png`.
-
-## Slide 6 - Conclusoes
-
-Pontos sugeridos:
-
-- o recorte contem 89.860 pedidos entregues;
-- o valor dos itens vendidos foi de R$ 12,34 milhoes;
-- o ticket medio sem frete foi de R$ 137,35;
-- a media e maior que a mediana, indicando pedidos de alto valor puxando a
-  media para cima;
-- categorias e UFs concentradas devem orientar analises futuras.
-
-## Slide 7 - Recomendacoes e Proximos Passos
-
-Recomendacoes:
-
-- monitorar evolucao mensal com indicadores fixos;
-- aprofundar categorias lideres para entender dependencia comercial;
-- cruzar, em uma segunda etapa, satisfacao e logistica com as categorias de
-  maior valor;
-- manter a estrutura de validacao para evitar indicadores inflados.
-
-Fechamento:
-
-> A principal contribuicao do projeto foi transformar uma base com multiplas
-> tabelas em uma leitura comercial confiavel, reprodutivel e explicavel.
-
+Os gráficos dos slides 2 a 4 são objetos editáveis do PowerPoint, com os valores incorporados. O vídeo é uma entrega separada que exige apresentação por integrante do grupo.

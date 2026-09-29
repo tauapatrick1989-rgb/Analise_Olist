@@ -28,6 +28,15 @@ concentracao por categoria e UF.
 | Pedidos | A base de pedidos agrega os itens antes de calcular ticket medio. |
 | Pagamentos e avaliacoes | Inventariados, mas nao entram na primeira versao da base comercial para evitar duplicacao. |
 
+## Complemento Executivo
+
+- A comparação anual considera janeiro a julho de 2017 e 2018, sempre com o mesmo filtro de pedidos entregues. Atribui-se cada pedido ao mês da **compra**.
+- Atraso significa que a **data** de entrega ao cliente é posterior à **data** estimada. Pedidos sem uma das datas ficam fora do denominador dessa taxa.
+- As avaliações são primeiro agregadas por `order_id`. Para uma taxa de notas 1 ou 2, um pedido com várias avaliações entra uma única vez e é marcado se qualquer nota for 1 ou 2. A nota média do pedido usa a média das avaliações disponíveis.
+- Os vendedores são agregados por `seller_id` no nível do item. O valor de um pedido com mais de um vendedor é distribuído conforme os itens, sem replicar o valor total do pedido.
+- Pagamentos não entram nas métricas comerciais. O valor pago pode incluir frete e um pedido pode ter várias parcelas.
+- `validacao_bases_analiticas.csv` precisa ter todos os controles `ok`; caso contrário, o pipeline interrompe antes de gerar os indicadores.
+
 ## Contrato de Metricas
 
 | Indicador | Calculo |
@@ -51,4 +60,3 @@ Pense no projeto como uma nota fiscal:
 Se juntarmos pagamentos ou avaliacoes sem cuidado, e como grampear duas copias
 da mesma nota e somar tudo de novo. O codigo separa a lista de itens da capa da
 nota para evitar esse erro.
-

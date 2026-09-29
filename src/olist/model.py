@@ -50,6 +50,8 @@ def build_fato_pedidos(fato_itens: pd.DataFrame) -> pd.DataFrame:
             customer_state=("customer_state", "first"),
             order_status=("order_status", "first"),
             order_purchase_timestamp=("order_purchase_timestamp", "first"),
+            order_delivered_customer_date=("order_delivered_customer_date", "first"),
+            order_estimated_delivery_date=("order_estimated_delivery_date", "first"),
             order_month=("order_month", "first"),
             order_year=("order_year", "first"),
             is_delivered=("is_delivered", "first"),
@@ -67,7 +69,11 @@ def build_fato_pedidos(fato_itens: pd.DataFrame) -> pd.DataFrame:
     return item_agg
 
 
-def validate_analytics_bases(fato_itens: pd.DataFrame, fato_pedidos: pd.DataFrame) -> pd.DataFrame:
+def validate_analytics_bases(
+    fato_itens: pd.DataFrame,
+    fato_pedidos: pd.DataFrame,
+    source_orders: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     eligible_items = fato_itens[fato_itens["is_eligible_analysis"].fillna(False)]
     eligible_orders = fato_pedidos[fato_pedidos["is_eligible_analysis"].fillna(False)]
 
@@ -98,9 +104,15 @@ def validate_analytics_bases(fato_itens: pd.DataFrame, fato_pedidos: pd.DataFram
             "observed": int(len(eligible_orders)),
         },
     ]
+    if source_orders is not None:
+        source_eligible = _add_eligibility_flags(source_orders)
+        rows.append({
+            "check": "eligible_orders_source_coverage",
+            "expected": int(source_eligible["is_eligible_analysis"].sum()),
+            "observed": int(len(eligible_orders)),
+        })
     result = pd.DataFrame(rows)
     result["status"] = result.apply(
         lambda row: "ok" if row["expected"] == row["observed"] else "review", axis=1
     )
     return result
-
