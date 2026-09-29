@@ -19,6 +19,9 @@ A entrega final deve contemplar:
 
 O projeto utiliza os nove arquivos públicos do dataset Olist:
 
+Os arquivos CSV brutos estão em `data/raw/`. Dados tratados e agregados devem
+ser salvos em `data/processed/`.
+
 | Arquivo | Descrição |
 |---|---|
 | `olist_orders_dataset.csv` | Status e datas das etapas dos pedidos |
@@ -31,17 +34,22 @@ O projeto utiliza os nove arquivos públicos do dataset Olist:
 | `olist_geolocation_dataset.csv` | Coordenadas e informações geográficas por prefixo de CEP |
 | `product_category_name_translation.csv` | Tradução dos nomes das categorias |
 
-## Trilhas de Análise
 
-O projeto pode seguir uma ou mais trilhas analíticas:
+## Estrutura do Repositório
 
-| Trilha | Possíveis análises |
-|---|---|
-| Crescimento e Receita | Evolução de pedidos, receita, ticket médio e participação por categoria |
-| Logística e SLA | Tempo de entrega, atrasos, desempenho regional e impacto nas avaliações |
-| Comportamento e Pagamentos | Meios de pagamento, parcelamento, recompra e retenção |
-| Satisfação do Cliente | Distribuição das notas e relação com entrega, preço e categoria |
-| Oportunidades e Recomendações | Frete, rotas críticas, categorias prioritárias e ações de melhoria |
+```text
+Analise_Olist/
+├── data/
+│   ├── raw/          # Dados brutos do dataset Olist
+│   └── processed/    # Dados tratados e agregados
+├── notebooks/        # Exploração e análises
+├── src/              # Código reutilizável
+├── reports/          # Relatórios e resultados
+├── presentations/    # Materiais da apresentação
+├── README.md
+└── requirements.txt
+```
+
 
 ## Metodologia
 
@@ -57,50 +65,6 @@ A análise será conduzida em etapas:
 8. Geração de recomendações executivas;
 9. Preparação do relatório, apresentação e vídeo final.
 
-## Métricas Sugeridas
-
-Algumas métricas previstas para análise:
-
-- Total de pedidos;
-- Receita total;
-- Ticket médio;
-- Tempo médio de entrega;
-- Percentual de pedidos atrasados;
-- Nota média das avaliações;
-- Distribuição de avaliações por categoria;
-- Relação entre atraso e satisfação do cliente;
-- Desempenho por estado ou região;
-- Participação de categorias no volume de vendas.
-
-## Estrutura Sugerida do Repositório
-
-```text
-Analise_Olist/
-├── data/
-│   ├── raw/
-│   └── processed/
-├── notebooks/
-├── src/
-├── reports/
-├── presentations/
-├── README.md
-└── requirements.txt
-```
-
-## Status do Projeto
-
-Em desenvolvimento.
-
-- [ ] Organizar base de dados
-- [ ] Criar dicionário de dados
-- [ ] Tratar inconsistências
-- [ ] Definir métricas finais
-- [ ] Desenvolver análises exploratórias
-- [ ] Criar visualizações
-- [ ] Elaborar recomendações
-- [ ] Finalizar relatório executivo
-- [ ] Preparar apresentação
-- [ ] Gravar vídeo final
 
 ## Entregáveis
 
@@ -110,8 +74,3 @@ Em desenvolvimento.
 - Vídeo de até 5 minutos;
 - Recomendações de negócio baseadas nos dados.
 
-## Autor
-
-**Tauã Patrick Santos Silva**
-
-Projeto acadêmico desenvolvido no contexto do Tech Challenge.
