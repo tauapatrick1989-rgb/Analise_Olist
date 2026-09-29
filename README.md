@@ -15,10 +15,6 @@ A entrega final deve contemplar:
 - Vídeo de até 5 minutos em linguagem executiva;
 - Recomendações baseadas nos dados analisados.
 
-## Pergunta Norteadora
-
-Como o desempenho das entregas se relaciona com as avaliações dos clientes e quais regiões, categorias ou etapas logísticas merecem investigação prioritária?
-
 ## Base de Dados
 
 O projeto utiliza os nove arquivos públicos do dataset Olist:
