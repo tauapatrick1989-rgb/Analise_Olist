@@ -1,0 +1,6 @@
+check,expected,observed,status
+unique_item_key,0,0,ok
+unique_order_key,0,0,ok
+eligible_price_cents_reconciliation,1234245049,1234245049,ok
+eligible_freight_cents_reconciliation,204517788,204517788,ok
+eligible_distinct_orders,89860,89860,ok

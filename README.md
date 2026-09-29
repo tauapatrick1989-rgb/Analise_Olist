@@ -1,7 +1,20 @@
-# Tech Challenge Olist | Análise de E-commerce
+# Tech Challenge Olist | Analise de E-commerce
 
 Projeto desenvolvido para o Tech Challenge com base no **Brazilian E-Commerce Public Dataset by Olist**.
 O objetivo é construir uma análise executiva para apoiar investidores e acionistas de e-commerce na leitura de desempenho comercial, eficiência logística e satisfação dos clientes.
+
+## Trilha Escolhida
+
+**Crescimento e Receita.**
+
+A primeira versao do projeto prioriza uma entrega completa, reprodutivel e
+explicavel: evolucao dos pedidos entregues, valor dos itens vendidos, ticket
+medio sem frete e concentracao por categoria e UF do cliente.
+
+Pergunta central:
+
+> Como evoluiram os pedidos entregues e o valor dos itens na base Olist, e quais
+> categorias e UFs concentram a contribuicao para esse desempenho?
 
 ## Objetivo do Projeto
 
@@ -16,7 +29,7 @@ A entrega final deve contemplar:
 - Recomendações baseadas nos dados analisados.
 
 
-## Metodologia
+## Metodologia Aplicada
 
 A análise será conduzida em etapas:
 
@@ -30,6 +43,65 @@ A análise será conduzida em etapas:
 8. Geração de recomendações executivas;
 9. Preparação do relatório, apresentação e vídeo final.
 
+Neste repositorio, a metodologia foi operacionalizada em um pipeline Python:
+
+```text
+data/raw -> auditoria -> limpeza -> fato_itens/fato_pedidos -> metricas -> graficos -> relatorio
+```
+
+## Como Executar
+
+Instale as dependencias e rode os testes:
+
+```bash
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests
+```
+
+Execute o pipeline completo:
+
+```bash
+python scripts/run_pipeline.py
+```
+
+O pipeline gera:
+
+- `reports/qualidade/`: inventario, nulos, chaves, relacionamentos e validacao das bases;
+- `reports/tabelas/`: resumo executivo e tabelas de metricas;
+- `reports/figuras/`: graficos principais;
+- `data/processed/clean/` e `data/processed/analytics/`: bases tratadas e bases analiticas reproduziveis.
+
+Os CSVs processados nao sao versionados para evitar peso desnecessario no GitHub.
+
+## Resultados Principais do Recorte
+
+Recorte usado na primeira versao: pedidos com `order_status = delivered` e data
+de compra entre **2017-01-01** e **2018-07-31**.
+
+| Indicador | Resultado |
+|---|---:|
+| Pedidos entregues no recorte | 89.860 |
+| Clientes unicos no recorte | 86.960 |
+| Itens vendidos no recorte | 102.738 |
+| Valor dos itens vendidos | R$ 12.342.450,49 |
+| Frete associado | R$ 2.045.177,88 |
+| Ticket medio sem frete | R$ 137,35 |
+
+## Cuidados Tecnicos
+
+- O valor analisado e **valor dos itens vendidos**, nao lucro ou receita liquida.
+- A base `fato_itens` tem uma linha por `order_id + order_item_id`.
+- A base `fato_pedidos` tem uma linha por `order_id`.
+- Pagamentos e avaliacoes foram auditados, mas nao entraram na primeira base
+  comercial para evitar multiplicacao de valores.
+- O teste automatizado garante que um pedido com dois itens nao tenha seu valor
+  duplicado durante a modelagem.
+
+## Documentacao da Entrega
+
+- [Regras de tratamento](docs/regras_tratamento.md)
+- [Roteiro da entrega da Fase 1](docs/roteiro_entrega_fase1.md)
+- [Relatorio final explicativo](docs/relatorio_saida_final.md)
 
 ## Entregáveis
 
@@ -74,5 +146,4 @@ Analise_Olist/
 ├── README.md
 └── requirements.txt
 ```
-
 
