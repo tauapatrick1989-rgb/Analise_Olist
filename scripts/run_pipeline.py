@@ -1,3 +1,4 @@
+"""Ponto de entrada da análise comercial e logística do Tech Challenge Olist."""
 from __future__ import annotations
 
 import os
@@ -7,89 +8,58 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 os.environ.setdefault("MPLCONFIGDIR", str(ROOT / ".matplotlib"))
+os.environ.setdefault("MPLBACKEND", "Agg")
 
 from olist.audit import audit_raw_files
 from olist.clean import clean_central_tables
 from olist.config import DATA_ANALYTICS, DATA_CLEAN, REPORTS_FIGURES, REPORTS_QUALITY, REPORTS_TABLES
+from olist.io import load_raw_tables, save_tables
+from olist.logistics import (
+    category_delivery_times, delivery_review_metrics, prepare_delivery_orders, state_logistics,
+)
 from olist.metrics import (
-    category_metrics,
-    executive_summary,
-    comparable_periods,
-    delivery_review_metrics,
-    monthly_metrics,
-    order_value_distribution,
-    state_metrics,
-    seller_metrics,
+    category_metrics, comparable_periods, executive_summary, monthly_metrics,
+    order_value_distribution, seller_metrics, state_metrics,
 )
 from olist.model import build_fato_itens, build_fato_pedidos, validate_analytics_bases
 from olist.visualizations import save_figures
-from olist.io import read_raw
-
-
-def save_tables(tables: dict[str, object], output_dir: Path) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    for name, table in tables.items():
-        table.to_csv(output_dir / f"{name}.csv", index=False)
 
 
 def main() -> None:
-    for path in (DATA_CLEAN, DATA_ANALYTICS, REPORTS_QUALITY, REPORTS_TABLES, REPORTS_FIGURES):
-        path.mkdir(parents=True, exist_ok=True)
-
-    audit = audit_raw_files()
+    raw = load_raw_tables()
+    audit = audit_raw_files(raw)
     save_tables(audit, REPORTS_QUALITY)
+    for name in ("keys", "relationships"):
+        if audit[name]["status"].eq("review").any():
+            raise ValueError(f"Problemas na auditoria de {name}; consulte reports/qualidade")
 
-    clean = clean_central_tables()
+    clean = clean_central_tables(raw)
     save_tables(clean, DATA_CLEAN)
+    items = build_fato_itens(clean["orders"], clean["items"], clean["customers"], clean["products"])
+    orders = build_fato_pedidos(items)
+    checks = validate_analytics_bases(items, orders, clean["orders"])
+    save_tables({"validacao_bases_analiticas": checks}, REPORTS_QUALITY)
+    if not checks["status"].eq("ok").all():
+        raise ValueError("Validação das bases analíticas falhou; consulte reports/qualidade")
 
-    fato_itens = build_fato_itens(
-        orders=clean["orders"],
-        items=clean["items"],
-        customers=clean["customers"],
-        products=clean["products"],
-    )
-    fato_pedidos = build_fato_pedidos(fato_itens)
-    validation = validate_analytics_bases(fato_itens, fato_pedidos, clean["orders"])
-    validation.to_csv(REPORTS_QUALITY / "validacao_bases_analiticas.csv", index=False)
-    if not validation["status"].eq("ok").all():
-        raise ValueError("Validacao das bases analiticas falhou")
-
-    save_tables(
-        {
-            "fato_itens": fato_itens,
-            "fato_pedidos": fato_pedidos,
-        },
-        DATA_ANALYTICS,
-    )
-
-    monthly = monthly_metrics(fato_pedidos)
-    categories = category_metrics(fato_itens)
-    states = state_metrics(fato_pedidos)
-    summary = executive_summary(fato_pedidos, fato_itens)
-    distribution = order_value_distribution(fato_pedidos)
-    comparison = comparable_periods(fato_pedidos)
-    sellers = seller_metrics(fato_itens)
-    delivery_reviews = delivery_review_metrics(fato_pedidos, read_raw("reviews"))
-
-    save_tables(
-        {
-            "resumo_executivo": summary,
-            "metricas_mensais": monthly,
-            "metricas_categorias_top15": categories,
-            "metricas_ufs": states,
-            "distribuicao_valor_pedido": distribution,
-            "comparativo_jan_jul": comparison,
-            "metricas_vendedores_top15": sellers,
-            "entrega_e_avaliacao": delivery_reviews,
-        },
-        REPORTS_TABLES,
-    )
-    save_figures(monthly, categories, states, REPORTS_FIGURES)
-
-    print("Pipeline executado com sucesso.")
-    print(f"Relatorios de qualidade: {REPORTS_QUALITY}")
-    print(f"Tabelas de metricas: {REPORTS_TABLES}")
-    print(f"Figuras: {REPORTS_FIGURES}")
+    delivery = prepare_delivery_orders(orders, raw["reviews"])
+    save_tables({"fato_itens": items, "fato_pedidos": orders, "entregas_pedidos": delivery}, DATA_ANALYTICS)
+    tables = {
+        "resumo_executivo": executive_summary(orders, items),
+        "metricas_mensais": monthly_metrics(orders),
+        "metricas_categorias_top15": category_metrics(items),
+        "metricas_ufs": state_metrics(orders),
+        "distribuicao_valor_pedido": order_value_distribution(orders),
+        "comparativo_jan_jul": comparable_periods(orders),
+        "metricas_vendedores_top15": seller_metrics(items),
+        "entrega_e_avaliacao": delivery_review_metrics(delivery),
+        "logistica_por_uf": state_logistics(delivery),
+        "tempo_entrega_por_categoria": category_delivery_times(items, delivery),
+    }
+    save_tables(tables, REPORTS_TABLES)
+    save_figures(tables, REPORTS_FIGURES)
+    print(f"Pipeline concluído: {len(tables)} tabelas de indicadores e 6 gráficos.")
+    print(f"Qualidade: {REPORTS_QUALITY}\nIndicadores: {REPORTS_TABLES}\nGráficos: {REPORTS_FIGURES}")
 
 
 if __name__ == "__main__":

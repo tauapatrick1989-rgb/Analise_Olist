@@ -28,6 +28,6 @@ jobs:
           from pathlib import Path
           checks = pd.read_csv('reports/qualidade/validacao_bases_analiticas.csv')
           assert checks['status'].eq('ok').all()
-          for name in ('comparativo_jan_jul.csv', 'entrega_e_avaliacao.csv', 'metricas_vendedores_top15.csv'):
+          for name in ('comparativo_jan_jul.csv', 'entrega_e_avaliacao.csv', 'metricas_vendedores_top15.csv', 'logistica_por_uf.csv', 'tempo_entrega_por_categoria.csv'):
               assert Path('reports/tabelas', name).is_file()
           PY

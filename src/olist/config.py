@@ -25,9 +25,9 @@ RAW_FILES = {
     "category_translation": "product_category_name_translation.csv",
 }
 
-CENTRAL_TABLES = ("orders", "items", "customers", "products")
-
 ANALYSIS_START = "2017-01-01"
 ANALYSIS_END = "2018-07-31"
 ELIGIBLE_STATUS = "delivered"
 
+
+MIN_CATEGORY_ORDERS = 30

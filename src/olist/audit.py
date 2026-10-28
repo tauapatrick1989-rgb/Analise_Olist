@@ -1,38 +1,28 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import pandas as pd
 
 from .config import RAW_FILES
-from .io import file_sha256, raw_path, read_raw
-
-
-@dataclass(frozen=True)
-class KeyCheck:
-    table: str
-    key: str
+from .io import file_sha256, raw_path
 
 
 KEY_CHECKS = (
-    KeyCheck("orders", "order_id"),
-    KeyCheck("customers", "customer_id"),
-    KeyCheck("products", "product_id"),
-    KeyCheck("sellers", "seller_id"),
+    ("orders", "order_id"),
+    ("customers", "customer_id"),
+    ("products", "product_id"),
+    ("sellers", "seller_id"),
 )
 
 
-def audit_raw_files() -> dict[str, pd.DataFrame]:
+def audit_raw_files(data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+    """Inventarie as nove fontes e registre problemas sem modificar os dados."""
     inventory_rows = []
     missing_rows = []
     key_rows = []
-    status_rows = []
 
-    loaded: dict[str, pd.DataFrame] = {}
     for table in RAW_FILES:
         path = raw_path(table)
-        df = read_raw(table)
-        loaded[table] = df
+        df = data[table]
 
         inventory_rows.append(
             {
@@ -55,21 +45,23 @@ def audit_raw_files() -> dict[str, pd.DataFrame]:
                 }
             )
 
-    for check in KEY_CHECKS:
-        df = loaded[check.table]
-        duplicated = int(df[check.key].duplicated().sum())
+    for table, key in KEY_CHECKS:
+        df = data[table]
+        duplicated = int(df[key].duplicated().sum())
+        null_keys = int(df[key].isna().sum())
         key_rows.append(
             {
-                "table": check.table,
-                "key": check.key,
+                "table": table,
+                "key": key,
                 "rows": len(df),
-                "unique_keys": int(df[check.key].nunique(dropna=False)),
+                "unique_keys": int(df[key].nunique(dropna=False)),
                 "duplicated_keys": duplicated,
-                "status": "ok" if duplicated == 0 else "review",
+                "missing_keys": null_keys,
+                "status": "ok" if duplicated == 0 and null_keys == 0 else "review",
             }
         )
 
-    orders = loaded["orders"].copy()
+    orders = data["orders"].copy()
     orders["order_purchase_timestamp"] = pd.to_datetime(
         orders["order_purchase_timestamp"], errors="coerce"
     )
@@ -80,15 +72,13 @@ def audit_raw_files() -> dict[str, pd.DataFrame]:
         .reset_index(name="orders")
         .sort_values(["order_month", "order_status"])
     )
-    status_rows.extend(month_status.to_dict("records"))
-
-    relationship_rows = _relationship_checks(loaded)
+    relationship_rows = _relationship_checks(data)
 
     return {
         "inventory": pd.DataFrame(inventory_rows),
         "missing_values": pd.DataFrame(missing_rows),
         "keys": pd.DataFrame(key_rows),
-        "orders_by_month_status": pd.DataFrame(status_rows),
+        "orders_by_month_status": month_status,
         "relationships": pd.DataFrame(relationship_rows),
     }
 
@@ -104,6 +94,7 @@ def _relationship_checks(data: dict[str, pd.DataFrame]) -> list[dict[str, object
     order_ids = set(orders["order_id"].dropna())
     customer_ids = set(customers["customer_id"].dropna())
     product_ids = set(products["product_id"].dropna())
+    seller_ids = set(data["sellers"]["seller_id"].dropna())
 
     checks = [
         ("items.order_id -> orders.order_id", items["order_id"], order_ids),
@@ -111,6 +102,7 @@ def _relationship_checks(data: dict[str, pd.DataFrame]) -> list[dict[str, object
         ("reviews.order_id -> orders.order_id", reviews["order_id"], order_ids),
         ("orders.customer_id -> customers.customer_id", orders["customer_id"], customer_ids),
         ("items.product_id -> products.product_id", items["product_id"], product_ids),
+        ("items.seller_id -> sellers.seller_id", items["seller_id"], seller_ids),
     ]
 
     rows: list[dict[str, object]] = []
@@ -125,16 +117,4 @@ def _relationship_checks(data: dict[str, pd.DataFrame]) -> list[dict[str, object
             }
         )
 
-    for table_name, df in (("items", items), ("payments", payments), ("reviews", reviews)):
-        counts = df.groupby("order_id", dropna=False).size()
-        rows.append(
-            {
-                "relationship": f"{table_name} rows per order",
-                "checked_rows": int(len(counts)),
-                "missing_reference_rows": int((counts > 1).sum()),
-                "status": "behavior_possible",
-            }
-        )
-
     return rows
-

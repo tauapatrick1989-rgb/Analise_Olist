@@ -1,3 +1,4 @@
+"""Indicadores comerciais do recorte, com agregações monetárias em centavos."""
 from __future__ import annotations
 
 import pandas as pd
@@ -11,12 +12,22 @@ def _eligible_items(fato_itens: pd.DataFrame) -> pd.DataFrame:
     return fato_itens[fato_itens["is_eligible_analysis"].fillna(False)].copy()
 
 
+def _amounts_in_reais(table: pd.DataFrame) -> pd.DataFrame:
+    """Converta agregados monetários apenas depois da soma em centavos."""
+    for column in ("valor_itens", "frete"):
+        cents = f"{column}_centavos"
+        table[column] = table.pop(cents) / 100
+    return table
+
+
 def executive_summary(fato_pedidos: pd.DataFrame, fato_itens: pd.DataFrame) -> pd.DataFrame:
     orders = _eligible_orders(fato_pedidos)
     items = _eligible_items(fato_itens)
     total_orders = orders["order_id"].nunique()
-    total_price = orders["order_price"].sum()
-    total_freight = orders["order_freight"].sum()
+    total_price = orders["order_price_cents"].sum() / 100
+    total_freight = orders["order_freight_cents"].sum() / 100
+    if total_orders == 0:
+        raise ValueError("O recorte não contém pedidos elegíveis para análise")
     rows = [
         ("Pedidos entregues no recorte", total_orders),
         ("Clientes unicos no recorte", orders["customer_unique_id"].nunique()),
@@ -37,12 +48,13 @@ def monthly_metrics(fato_pedidos: pd.DataFrame) -> pd.DataFrame:
         .agg(
             pedidos=("order_id", "nunique"),
             clientes=("customer_unique_id", "nunique"),
-            valor_itens=("order_price", "sum"),
-            frete=("order_freight", "sum"),
+            valor_itens_centavos=("order_price_cents", "sum"),
+            frete_centavos=("order_freight_cents", "sum"),
         )
         .reset_index()
         .sort_values("order_month")
     )
+    result = _amounts_in_reais(result)
     result["ticket_medio_sem_frete"] = result["valor_itens"] / result["pedidos"]
     return result
 
@@ -54,12 +66,13 @@ def category_metrics(fato_itens: pd.DataFrame, top_n: int = 15) -> pd.DataFrame:
         .agg(
             pedidos=("order_id", "nunique"),
             itens=("order_item_id", "count"),
-            valor_itens=("price", "sum"),
-            frete=("freight_value", "sum"),
+            valor_itens_centavos=("price_cents", "sum"),
+            frete_centavos=("freight_cents", "sum"),
         )
         .reset_index()
-        .sort_values("valor_itens", ascending=False)
+        .sort_values("valor_itens_centavos", ascending=False)
     )
+    result = _amounts_in_reais(result)
     total = result["valor_itens"].sum()
     result["participacao_valor"] = result["valor_itens"] / total
     return result.head(top_n)
@@ -72,12 +85,13 @@ def state_metrics(fato_pedidos: pd.DataFrame) -> pd.DataFrame:
         .agg(
             pedidos=("order_id", "nunique"),
             clientes=("customer_unique_id", "nunique"),
-            valor_itens=("order_price", "sum"),
-            frete=("order_freight", "sum"),
+            valor_itens_centavos=("order_price_cents", "sum"),
+            frete_centavos=("order_freight_cents", "sum"),
         )
         .reset_index()
-        .sort_values("valor_itens", ascending=False)
+        .sort_values("valor_itens_centavos", ascending=False)
     )
+    result = _amounts_in_reais(result)
     result["participacao_valor"] = result["valor_itens"] / result["valor_itens"].sum()
     return result
 
@@ -128,32 +142,3 @@ def seller_metrics(fato_itens: pd.DataFrame) -> pd.DataFrame:
     result["participacao_valor"] = result["valor_itens_centavos"] / result["valor_itens_centavos"].sum()
     result["valor_itens"] = result.pop("valor_itens_centavos") / 100
     return result.head(15)
-
-
-def delivery_review_metrics(fato_pedidos: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataFrame:
-    """One observation per order; repeated reviews cannot duplicate item value."""
-    orders = _eligible_orders(fato_pedidos).copy()
-    scores = reviews[["order_id", "review_score"]].copy()
-    scores["review_score"] = pd.to_numeric(scores["review_score"], errors="coerce")
-    review_by_order = scores.groupby("order_id").agg(
-        review_score_mean=("review_score", "mean"),
-        low_review=("review_score", lambda s: bool(s.le(2).any())),
-    ).reset_index()
-    orders = orders.merge(review_by_order, on="order_id", how="left", validate="one_to_one")
-    actual = pd.to_datetime(orders["order_delivered_customer_date"], errors="coerce")
-    estimated = pd.to_datetime(orders["order_estimated_delivery_date"], errors="coerce")
-    orders = orders[actual.notna() & estimated.notna()].copy()
-    orders["atrasou"] = actual.loc[orders.index].dt.normalize().gt(
-        estimated.loc[orders.index].dt.normalize()
-    )
-    rows = []
-    for atrasou, group in orders.groupby("atrasou"):
-        reviewed = group[group["review_score_mean"].notna()]
-        rows.append({
-            "situacao": "Atrasou" if atrasou else "No prazo",
-            "pedidos_com_prazo_observavel": len(group),
-            "pedidos_com_avaliacao": len(reviewed),
-            "percentual_notas_1_ou_2": float(reviewed["low_review"].mean()) if len(reviewed) else float("nan"),
-            "nota_media": float(reviewed["review_score_mean"].mean()) if len(reviewed) else float("nan"),
-        })
-    return pd.DataFrame(rows)

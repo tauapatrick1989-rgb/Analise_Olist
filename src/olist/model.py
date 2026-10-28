@@ -8,10 +8,13 @@ from .config import ANALYSIS_END, ANALYSIS_START, ELIGIBLE_STATUS
 def _add_eligibility_flags(df: pd.DataFrame) -> pd.DataFrame:
     result = df.copy()
     start = pd.Timestamp(ANALYSIS_START)
-    end = pd.Timestamp(ANALYSIS_END) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
-    result["is_delivered"] = result["order_status"].eq(ELIGIBLE_STATUS)
-    result["is_in_analysis_period"] = result["order_purchase_timestamp"].between(start, end)
-    result["is_eligible_analysis"] = result["is_delivered"] & result["is_in_analysis_period"]
+    end_exclusive = pd.Timestamp(ANALYSIS_END) + pd.Timedelta(days=1)
+    purchase = result["order_purchase_timestamp"]
+    result["is_eligible_analysis"] = (
+        result["order_status"].eq(ELIGIBLE_STATUS)
+        & purchase.ge(start)
+        & purchase.lt(end_exclusive)
+    )
     result["order_month"] = result["order_purchase_timestamp"].dt.to_period("M").astype("string")
     result["order_year"] = result["order_purchase_timestamp"].dt.year.astype("Int64")
     return result
@@ -23,6 +26,7 @@ def build_fato_itens(
     customers: pd.DataFrame,
     products: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Integre dimensões sem multiplicar a chave de cada item do pedido."""
     orders_customer = orders.merge(customers, on="customer_id", how="left", validate="many_to_one")
     orders_customer = _add_eligibility_flags(orders_customer)
 
@@ -37,14 +41,13 @@ def build_fato_itens(
 
 
 def build_fato_pedidos(fato_itens: pd.DataFrame) -> pd.DataFrame:
+    """Agregue centavos por pedido e derive os valores em reais após a soma."""
     item_agg = (
         fato_itens.groupby("order_id", dropna=False)
         .agg(
             items_count=("order_item_id", "count"),
             order_price_cents=("price_cents", "sum"),
             order_freight_cents=("freight_cents", "sum"),
-            order_price=("price", "sum"),
-            order_freight=("freight_value", "sum"),
             customer_id=("customer_id", "first"),
             customer_unique_id=("customer_unique_id", "first"),
             customer_state=("customer_state", "first"),
@@ -54,18 +57,13 @@ def build_fato_pedidos(fato_itens: pd.DataFrame) -> pd.DataFrame:
             order_estimated_delivery_date=("order_estimated_delivery_date", "first"),
             order_month=("order_month", "first"),
             order_year=("order_year", "first"),
-            is_delivered=("is_delivered", "first"),
-            is_in_analysis_period=("is_in_analysis_period", "first"),
             is_eligible_analysis=("is_eligible_analysis", "first"),
         )
         .reset_index()
     )
 
-    duplicated_orders = item_agg["order_id"].duplicated().sum()
-    if duplicated_orders:
-        raise ValueError(f"fato_pedidos has duplicated order keys: {duplicated_orders}")
-
-    item_agg["ticket_sem_frete"] = item_agg["order_price"]
+    item_agg["order_price"] = item_agg["order_price_cents"] / 100
+    item_agg["order_freight"] = item_agg["order_freight_cents"] / 100
     return item_agg
 
 
@@ -74,6 +72,7 @@ def validate_analytics_bases(
     fato_pedidos: pd.DataFrame,
     source_orders: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
+    """Reconcilie chaves, dinheiro e cobertura com a fonte de pedidos."""
     eligible_items = fato_itens[fato_itens["is_eligible_analysis"].fillna(False)]
     eligible_orders = fato_pedidos[fato_pedidos["is_eligible_analysis"].fillna(False)]
 
@@ -112,7 +111,5 @@ def validate_analytics_bases(
             "observed": int(len(eligible_orders)),
         })
     result = pd.DataFrame(rows)
-    result["status"] = result.apply(
-        lambda row: "ok" if row["expected"] == row["observed"] else "review", axis=1
-    )
+    result["status"] = result["expected"].eq(result["observed"]).map({True: "ok", False: "review"})
     return result

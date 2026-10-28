@@ -4,25 +4,26 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 import pandas as pd
 
-from .io import read_raw
-
 
 MISSING_CATEGORY = "Sem categoria informada"
 MISSING_CATEGORY_EN = "not_informed"
 
 
-def money_to_cents(value: object) -> pd.NA | int:
+def money_to_cents(value: object) -> int | None:
+    """Converta reais em centavos com arredondamento decimal comercial."""
     if pd.isna(value):
-        return pd.NA
+        return None
     try:
         amount = Decimal(str(value).strip()).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     except (InvalidOperation, ValueError):
-        return pd.NA
+        return None
+    if not amount.is_finite():
+        return None
     return int(amount * 100)
 
 
-def clean_orders() -> pd.DataFrame:
-    df = read_raw("orders")
+def clean_orders(orders: pd.DataFrame) -> pd.DataFrame:
+    df = orders.copy()
     date_columns = [
         "order_purchase_timestamp",
         "order_approved_at",
@@ -36,17 +37,15 @@ def clean_orders() -> pd.DataFrame:
     return df
 
 
-def clean_customers() -> pd.DataFrame:
-    df = read_raw("customers")
+def clean_customers(customers: pd.DataFrame) -> pd.DataFrame:
+    df = customers.copy()
     df["customer_zip_code_prefix"] = df["customer_zip_code_prefix"].str.zfill(5)
     df["customer_city"] = df["customer_city"].str.strip().str.lower()
     df["customer_state"] = df["customer_state"].str.strip().str.upper()
     return df
 
 
-def clean_products() -> pd.DataFrame:
-    products = read_raw("products")
-    translation = read_raw("category_translation")
+def clean_products(products: pd.DataFrame, translation: pd.DataFrame) -> pd.DataFrame:
     df = products.merge(
         translation,
         on="product_category_name",
@@ -71,21 +70,24 @@ def clean_products() -> pd.DataFrame:
     return df
 
 
-def clean_items() -> pd.DataFrame:
-    df = read_raw("items")
+def clean_items(items: pd.DataFrame) -> pd.DataFrame:
+    df = items.copy()
     df["shipping_limit_date"] = pd.to_datetime(df["shipping_limit_date"], errors="coerce")
     df["price_cents"] = df["price"].map(money_to_cents).astype("Int64")
     df["freight_cents"] = df["freight_value"].map(money_to_cents).astype("Int64")
-    df["price"] = pd.to_numeric(df["price"], errors="coerce")
-    df["freight_value"] = pd.to_numeric(df["freight_value"], errors="coerce")
+    for column in ("price_cents", "freight_cents"):
+        if df[column].isna().any() or df[column].lt(0).any():
+            raise ValueError(f"Valor monetário ausente, inválido ou negativo em {column}")
+    df["price"] = df["price_cents"] / 100
+    df["freight_value"] = df["freight_cents"] / 100
     return df
 
 
-def clean_central_tables() -> dict[str, pd.DataFrame]:
+def clean_central_tables(data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+    """Trate as quatro tabelas usadas na modelagem, preservando as fontes."""
     return {
-        "orders": clean_orders(),
-        "customers": clean_customers(),
-        "products": clean_products(),
-        "items": clean_items(),
+        "orders": clean_orders(data["orders"]),
+        "customers": clean_customers(data["customers"]),
+        "products": clean_products(data["products"], data["category_translation"]),
+        "items": clean_items(data["items"]),
     }
-

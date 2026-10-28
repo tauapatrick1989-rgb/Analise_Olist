@@ -11,7 +11,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from olist.clean import money_to_cents
 from olist.model import build_fato_itens, build_fato_pedidos, validate_analytics_bases
-from olist.metrics import comparable_periods, delivery_review_metrics
+from olist.metrics import comparable_periods
+from olist.logistics import delivery_review_metrics, prepare_delivery_orders
 
 
 class ModelingTests(unittest.TestCase):
@@ -103,11 +104,14 @@ class ModelingTests(unittest.TestCase):
         orders = pd.DataFrame({
             "order_id": ["a", "b"],
             "is_eligible_analysis": [True, True],
+            "order_purchase_timestamp": pd.to_datetime(["2018-01-01", "2018-01-01"]),
             "order_delivered_customer_date": pd.to_datetime(["2018-01-10 18:00", "2018-01-12 12:00"]),
             "order_estimated_delivery_date": pd.to_datetime(["2018-01-10", "2018-01-10"]),
         })
         reviews = pd.DataFrame({"order_id": ["a", "a", "b"], "review_score": [5, 4, 1]})
-        result = delivery_review_metrics(orders, reviews).set_index("situacao")
+        reviews["review_comment_title"] = ""
+        reviews["review_comment_message"] = ""
+        result = delivery_review_metrics(prepare_delivery_orders(orders, reviews)).set_index("situacao")
         self.assertEqual(result["pedidos_com_prazo_observavel"].sum(), 2)
         self.assertEqual(result.loc["No prazo", "pedidos_com_avaliacao"], 1)
         self.assertEqual(result.loc["Atrasou", "percentual_notas_1_ou_2"], 1.0)

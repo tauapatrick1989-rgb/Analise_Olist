@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 import hashlib
 from pathlib import Path
 
@@ -84,3 +85,14 @@ def read_raw(table: str, **kwargs) -> pd.DataFrame:
         **kwargs,
     )
 
+
+def load_raw_tables() -> dict[str, pd.DataFrame]:
+    """Leia cada CSV uma vez, preservando IDs, CEPs e valores monetários."""
+    return {name: read_raw(name) for name in RAW_FILES}
+
+
+def save_tables(tables: Mapping[str, pd.DataFrame], output_dir: Path) -> None:
+    """Grave tabelas sem índice em um diretório de saída reproduzível."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for name, table in tables.items():
+        table.to_csv(output_dir / f"{name}.csv", index=False)
