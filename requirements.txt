@@ -1,1 +1,2 @@
-pandas==3.0.5\nmatplotlib==3.11.1\n
+pandas==3.0.5
+matplotlib==3.11.1
